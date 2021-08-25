@@ -1,0 +1,485 @@
+{
+  "service": {
+    "service": "nodeless",
+    "serviceObject": {
+      "name": "nodeless"
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs12.x",
+      "memorySize": 256,
+      "lambdaHashingVersion": "20201221",
+      "iamRoleStatements": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:GetObject",
+            "s3:PutObject"
+          ],
+          "Resource": "arn:aws:s3:::*"
+        }
+      ],
+      "stage": "dev",
+      "region": "us-east-1",
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "OptimizeLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/nodeless-dev-optimize"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "nodeless",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/nodeless-dev*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/nodeless-dev*:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iamRoleStatements\"][0]"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "nodeless",
+                    "dev",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "OptimizeLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/nodeless/dev/1629897394046-2021-08-25T13:16:34.046Z/nodeless.zip"
+              },
+              "Handler": "optimize.handler",
+              "Runtime": "nodejs12.x",
+              "FunctionName": "nodeless-dev-optimize",
+              "MemorySize": 256,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "bucket": "serverlessnodewillian"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "OptimizeLogGroup"
+            ]
+          },
+          "OptimizeLambdaVersionde9O6S5yQzZoBKiVCHa3WRchORo7c0QrNostTQ6d5jw": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "OptimizeLambdaFunction"
+              },
+              "CodeSha256": "R4TnB0TZXWrlCcYu6qMKVrVAJAhgYwgLxWo/7sRY5/g="
+            }
+          },
+          "S3BucketServerlessnodewillian": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "serverlessnodewillian",
+              "NotificationConfiguration": {
+                "LambdaConfigurations": [
+                  {
+                    "Event": "s3:ObjectCreated:*",
+                    "Function": {
+                      "Fn::GetAtt": [
+                        "OptimizeLambdaFunction",
+                        "Arn"
+                      ]
+                    },
+                    "Filter": {
+                      "S3Key": {
+                        "Rules": [
+                          {
+                            "Name": "prefix",
+                            "Value": "uploads/"
+                          },
+                          {
+                            "Name": "suffix",
+                            "Value": ".jpg"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "Event": "s3:ObjectCreated:*",
+                    "Function": {
+                      "Fn::GetAtt": [
+                        "OptimizeLambdaFunction",
+                        "Arn"
+                      ]
+                    },
+                    "Filter": {
+                      "S3Key": {
+                        "Rules": [
+                          {
+                            "Name": "prefix",
+                            "Value": "uploads/"
+                          },
+                          {
+                            "Name": "suffix",
+                            "Value": ".png"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "DependsOn": [
+              "OptimizeLambdaPermissionServerlessnodewillianS3",
+              "OptimizeLambdaPermissionServerlessnodewillianS3"
+            ]
+          },
+          "OptimizeLambdaPermissionServerlessnodewillianS3": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "OptimizeLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "s3.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":s3:::serverlessnodewillian"
+                  ]
+                ]
+              },
+              "SourceAccount": {
+                "Ref": "AWS::AccountId"
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            },
+            "Export": {
+              "Name": "sls-nodeless-dev-ServerlessDeploymentBucketName"
+            }
+          },
+          "OptimizeLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "OptimizeLambdaVersionde9O6S5yQzZoBKiVCHa3WRchORo7c0QrNostTQ6d5jw"
+            },
+            "Export": {
+              "Name": "sls-nodeless-dev-OptimizeLambdaFunctionQualifiedArn"
+            }
+          }
+        }
+      },
+      "coreCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "pluginsData": {},
+    "functions": {
+      "optimize": {
+        "handler": "optimize.handler",
+        "environment": {
+          "bucket": "serverlessnodewillian"
+        },
+        "events": [
+          {
+            "s3": {
+              "bucket": "serverlessnodewillian",
+              "event": "s3:ObjectCreated:*",
+              "rules": [
+                {
+                  "prefix": "uploads/"
+                },
+                {
+                  "suffix": ".jpg"
+                }
+              ]
+            }
+          },
+          {
+            "s3": {
+              "bucket": "serverlessnodewillian",
+              "event": "s3:ObjectCreated:*",
+              "rules": [
+                {
+                  "prefix": "uploads/"
+                },
+                {
+                  "suffix": ".png"
+                }
+              ]
+            }
+          }
+        ],
+        "name": "nodeless-dev-optimize",
+        "package": {},
+        "memory": 256,
+        "timeout": 6,
+        "runtime": "nodejs12.x",
+        "vpc": {},
+        "versionLogicalId": "OptimizeLambdaVersionde9O6S5yQzZoBKiVCHa3WRchORo7c0QrNostTQ6d5jw"
+      }
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless.yml",
+    "initialServerlessConfig": {
+      "service": {
+        "$ref": "$[\"service\"][\"serviceObject\"]"
+      },
+      "frameworkVersion": "2",
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "functions": {
+        "$ref": "$[\"service\"][\"functions\"]"
+      }
+    },
+    "layers": {},
+    "isDashboardMonitoringPreconfigured": false,
+    "artifact": "C:\\Users\\willo\\Documents\\serveless\\nodeless\\.serverless\\nodeless.zip"
+  },
+  "package": {
+    "artifactDirectoryName": "serverless/nodeless/dev/1629897394046-2021-08-25T13:16:34.046Z",
+    "artifact": "nodeless.zip"
+  }
+}
